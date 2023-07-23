@@ -73,6 +73,7 @@ const ChatBoxWhisper = () => {
       ]);
 
       const result = JSON.parse(data.result);
+      console.log("DIA FROM GET COMP", dialogue)
       setDialogue([
         ...dialogue,
         { role: "assistant", content: result.assistant },
@@ -133,6 +134,7 @@ const ChatBoxWhisper = () => {
                 }
 
                 setUserInput({ role: "user", content: data.result });
+                console.log("DIA FROM RECORD", dialogue)
                 setDialogue([
                   ...dialogue,
                   { role: "user", content: data.result },
