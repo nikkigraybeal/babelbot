@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     let result = completion.data.choices[0].message?.content
     console.log("COMPLETION OBJ", completion.data.choices[0].message?.content)
     try {
-      result = JSON.parse(completion.data.choices[0].message?.content)
+      result = JSON.parse(completion.data.choices[0].message!.content!)
     } catch (err: any) {
       return NextResponse.json({
         error: `PARSE ERROR: ${err.message}`

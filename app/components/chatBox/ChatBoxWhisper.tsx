@@ -50,13 +50,9 @@ const ChatBoxWhisper = () => {
 
   const getCompletion = async () => {
     try {
-      if (userInput) {
-        setDialogue([...dialogue, userInput]);
-      }
       const messages = userInput
         ? [...promptHistory, userInput]
         : [...promptHistory];
-      setUserInput(null);
       const res = await fetch("/api/completion", {
         method: "POST",
         headers: {
@@ -68,21 +64,21 @@ const ChatBoxWhisper = () => {
       const data = await res.json();
       console.log("DATA", data);
       if (data.error) {
-        getCompletion();
-      } else {
-        setPromptHistory([
-          ...messages,
-          { role: "assistant", content: data.result },
-        ]);
-
-        const result = JSON.parse(data.result);
-        setDialogue([
-          ...dialogue,
-          { role: "assistant", content: result.assistant },
-        ]);
-
-        setSuggestions(result.suggestions);
+        getCompletion()
       }
+
+      setPromptHistory([
+        ...messages,
+        { role: "assistant", content: data.result },
+      ]);
+
+      const result = JSON.parse(data.result);
+      setDialogue([
+        ...dialogue,
+        { role: "assistant", content: result.assistant },
+      ]);
+
+      setSuggestions(result.suggestions);
     } catch {
       throw new Error("something went wrong");
     }
@@ -137,6 +133,10 @@ const ChatBoxWhisper = () => {
                 }
 
                 setUserInput({ role: "user", content: data.result });
+                setDialogue([
+                  ...dialogue,
+                  { role: "user", content: data.result },
+                ]);
               };
             } catch (error: any) {
               console.error(error);
