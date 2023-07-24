@@ -13,29 +13,11 @@ const ChatBoxWhisper = () => {
   const [promptHistory, setPromptHistory] = useState<Prompt[]>([
     {
       role: "system",
-      content: `You are a JSON generator. Always respond with a JSON object.
-
-      The user is a native English speaker who is a beginning Spanish language student. 
-      The user is doing a role playing exercise where they are a customer in a coffee shop ordering coffee from a barista.
-
-      Only respond with a JSON object to the user's prompts. Do not include any other text in your response.
-      The JSON object should include the barista's response as well as 3 suggestions in Spanish for how the user might respond. Include English translations.
-
-      The JSON object should look like this:
-      { assistant: ["Spanish Response", "English Translation"],
-        suggestions: [ 
-          [Spanish Suggestion for user", "English Translation"], 
-          [Spanish Suggestion for user", "English Translation"], 
-          [Spanish Suggestion for user", "English Translation"]
-        ]
-      }
-      
-      Continue to respond to user prompts in this manner.
-      `,
+      content: systemPrompt("Spanish", "English", scenarios[0]),
     },
     {
       role: "user",
-      content: "hola!",
+      content: "Hola!",
     },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);
@@ -45,8 +27,8 @@ const ChatBoxWhisper = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null,
   );
-  console.log("PROMPT HIST", promptHistory);
-  console.log("DIALOGUE", dialogue);
+  console.log("FROM WHISPER PROMPT HIST", promptHistory);
+  console.log("FROM WHISPER DIALOGUE", dialogue);
 
   const getCompletion = async () => {
     try {
@@ -62,9 +44,10 @@ const ChatBoxWhisper = () => {
       });
 
       const data = await res.json();
-      console.log("DATA", data);
+      console.log("WHISPER DATA", data);
       if (data.error) {
-        getCompletion()
+       console.log("ERROR", data.error)
+       return
       }
 
       setPromptHistory([
@@ -73,7 +56,7 @@ const ChatBoxWhisper = () => {
       ]);
 
       const result = JSON.parse(data.result);
-      console.log("DIA FROM GET COMP", dialogue)
+      console.log("WHIPSER DIALOGUE FROM GET COMP", dialogue)
       setDialogue([
         ...dialogue,
         { role: "assistant", content: result.assistant },
@@ -125,7 +108,7 @@ const ChatBoxWhisper = () => {
                   body: JSON.stringify({ audio: base64Audio }),
                 });
                 const data = await response.json();
-                console.log("DATA", data);
+                console.log("WHISPER DATA", data);
                 if (response.status !== 200) {
                   throw (
                     data.error ||
@@ -133,12 +116,13 @@ const ChatBoxWhisper = () => {
                   );
                 }
 
-                setUserInput({ role: "user", content: data.result });
-                console.log("DIA FROM RECORD", dialogue)
                 setDialogue([
                   ...dialogue,
                   { role: "user", content: data.result },
                 ]);
+                console.log("WHISPER DIALOGUE FROM RECORD", dialogue)
+                setUserInput({ role: "user", content: data.result });
+                
               };
             } catch (error: any) {
               console.error(error);
@@ -197,7 +181,7 @@ const ChatBoxWhisper = () => {
           );
         })}
       </div>
-
+      {/* SUGGESTON BOX */}
       <div
         style={{ minHeight: "340px" }}
         className="flex flex-col justify-end items-center w-full bg-gradient-to-b from-micbox-light to-micbox-dark rounded-t-xl relative mx-auto my-0 overflow-hidden"

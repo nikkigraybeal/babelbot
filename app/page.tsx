@@ -5,7 +5,7 @@ import ChatBoxWhisper from "./components/chatBox/ChatBoxWhisper";
 
 export default function Home() {
   const [speechToText, setSpeechToText] = useState<"speech api" | "whisper">(
-    "whisper",
+    "speech api",
   );
   return (
     <main className="flex flex-col items-center">

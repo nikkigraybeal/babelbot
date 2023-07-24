@@ -8,6 +8,7 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 export async function POST(req: NextRequest) {
+  console.log("POST!!!!")
   if (!configuration.apiKey) {
     return NextResponse.json({
       error: {
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
     });
 
     let result = completion.data.choices[0].message?.content
+    result = result!.slice(result!.indexOf("{"))
     console.log("COMPLETION OBJ", completion.data.choices[0].message?.content)
     try {
       result = JSON.parse(completion.data.choices[0].message!.content!)
