@@ -15,26 +15,23 @@ const ChatBoxSpeechApi = () => {
       role: "system",
       content: systemPrompt("Spanish", "English", scenarios[0]),
     },
-    {
-      role: "user",
-      content: "Hola!",
-    },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);
   const [suggestions, setSuggestions] = useState<string[][]>([]); // [[suggested res, translation]]
-  const [userInput, setUserInput] = useState<Prompt | null>(null);
+  const [userInput, setUserInput] = useState<Prompt>({
+    role: "user",
+    content: "Hola"
+  });
   const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
   const recognitionRef = useRef<any>(null);
   console.log("SPEECH API PROMPT HIST", promptHistory)
-  console.log("FROM SPEECH API DIALOGUE", dialogue)
+  console.log("SPEECH API DIALOGUE", dialogue)
 
 
   const getCompletion = async () => {
     try {
-      const messages = userInput
-        ? [...promptHistory, userInput]
-        : [...promptHistory];
-        console.log("PREPOST!!!")
+      const messages = [...promptHistory, userInput]
+    
       const res = await fetch("/api/completion", {
         method: "POST",
         headers: {
@@ -42,9 +39,7 @@ const ChatBoxSpeechApi = () => {
         },
         body: JSON.stringify(messages),
       });
-      console.log("POSTPOST!!!!")
       const data = await res.json();
-      console.log("SPEECH API DATA", data);
       if (data.error) {
        console.log("ERROR", data.error)
        return
@@ -56,9 +51,10 @@ const ChatBoxSpeechApi = () => {
       ]);
 
       const result = JSON.parse(data.result);
-      console.log("DIALOGUE FROM GET COMP", dialogue)
+      console.log("SPEECH API DIALOGUE FROM GET COMP", dialogue)
       setDialogue([
-        ...dialogue,
+        ...dialogue, 
+        userInput,
         { role: "assistant", content: result.assistant },
       ]);
 
@@ -112,8 +108,7 @@ const ChatBoxSpeechApi = () => {
         const transcript = Array.from(event.results)
           .map((result: any) => result[0].transcript)
           .join("");
-
-        setDialogue([...dialogue, { role: "user", content: transcript }])
+       
         setUserInput({ role: "user", content: transcript });
         
       };
@@ -142,7 +137,8 @@ const ChatBoxSpeechApi = () => {
     <div className="w-6/12 h-chat-container bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-0 rounded-xl flex flex-col justify-end items-center min-w-300 px-4">
       <div className="overflow-y-scroll w-full ml-8 flex flex-col justfy-end items-center">
         {dialogue.map((line, idx) => {
-          return (
+          return idx !== 0 ? 
+           (
             <div
               className={`text-white p-3 my-2 rounded-chat-bubble rounded-bl-none w-fit ${
                 line.role === "user"
@@ -163,7 +159,7 @@ const ChatBoxSpeechApi = () => {
                 </div>
               )}
             </div>
-          );
+          ) : ""
         })}
       </div>
       {/* SUGGESTON BOX */}

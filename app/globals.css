@@ -5,3 +5,18 @@
 * {
   box-sizing: border-box;
 }
+
+.scroll-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background-color: #2C455A;
+  border-radius: 4px;
+}
+
+/* Custom scrollbar for Firefox */
+.scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #2C455A #f7fafc;
+}

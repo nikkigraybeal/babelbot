@@ -33,9 +33,6 @@ module.exports = {
       borderRadius: {
         'chat-bubble': "30px"
       },
-      marginRight: {
-     
-      },
     },
   },
   plugins: [],
