@@ -1,37 +1,45 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import micIcon from "../../../public/micIcon.svg";
-import { systemPrompt, scenarios } from "@/utils/systemPrompt";
+import speakerIcon from "../../../public/speakerIcon.svg";
 import Image from "next/image";
+import { systemPrompt, scenarios } from "@/utils/systemPrompt";
 
-interface Prompt {
-  role: "assistant" | "user" | "system";
-  content: string;
-}
 
-const ChatBoxSpeechApi = () => {
+const ChatBoxSpeechApi = ({ selectedVoice, selectedLanguage, greeting }) => {
   const [promptHistory, setPromptHistory] = useState<Prompt[]>([
     {
       role: "system",
-      content: systemPrompt("Spanish", "English", scenarios[0]),
+      content: systemPrompt(selectedLanguage, "English", scenarios[0]),
     },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);
   const [suggestions, setSuggestions] = useState<string[][]>([]); // [[suggested res, translation]]
   const [userInput, setUserInput] = useState<Prompt>({
     role: "user",
-    content: "Hola"
+    content: greeting
   });
   const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
   const recognitionRef = useRef<any>(null);
+  const [synthesizedSpeech, setSynthesizedSpeech] =
+    useState<SpeechSynthesisUtterance | null>(null);
+
   console.log("SPEECH API PROMPT HIST", promptHistory)
   console.log("SPEECH API DIALOGUE", dialogue)
 
+  useEffect(() => {
+    if (dialogue.length > 0) {
+      const last = dialogue.length - 1;
+      speakText(dialogue[last].content[0]);
+      suggestions.map((suggestion) => speakText(suggestion[0]));
+    }
+  }, [selectedVoice]);
 
   const getCompletion = async () => {
     try {
-      const messages = [...promptHistory, userInput]
-    
+      const messages = userInput
+        ? [...promptHistory, userInput]
+        : [...promptHistory];
       const res = await fetch("/api/completion", {
         method: "POST",
         headers: {
@@ -39,6 +47,7 @@ const ChatBoxSpeechApi = () => {
         },
         body: JSON.stringify(messages),
       });
+
       const data = await res.json();
       if (data.error) {
        console.log("ERROR", data.error)
@@ -57,8 +66,10 @@ const ChatBoxSpeechApi = () => {
         userInput,
         { role: "assistant", content: result.assistant },
       ]);
+      speakText(result.assistant[0]);
 
       setSuggestions(result.suggestions);
+      result.suggestions.map((suggestion) => speakText(suggestion[0]));
     } catch {
       throw new Error("something went wrong");
     }
@@ -133,14 +144,38 @@ const ChatBoxSpeechApi = () => {
     }
   };
 
+  ////// TEXT TO SPEECH //////
+  useEffect(() => {
+    if (synthesizedSpeech) {
+      synthesizedSpeech.onend = () => {
+        // The speech synthesis has finished.
+        // You can implement additional logic here if needed.
+      };
+      synthesizedSpeech.onerror = (error) => {
+        console.error("Error during speech synthesis:", error);
+      };
+    }
+  }, [synthesizedSpeech]);
+
+  const speakText = (text: string) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedLanguage;
+      utterance.text = text;
+      utterance.rate = 0.8;
+      setSynthesizedSpeech(utterance);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   return (
-    <div className="w-6/12 h-chat-container bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-0 rounded-xl flex flex-col justify-end items-center min-w-300 px-4">
-      <div className="overflow-y-scroll w-full ml-8 flex flex-col justfy-end items-center">
+    <div className="w-6/12 h-chat-container bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-0 p-2 rounded-xl flex flex-col justify-end items-center min-w-300">
+      <div className="scroll-container overflow-y-scroll w-full flex flex-col justfy-end items-center">
         {dialogue.map((line, idx) => {
-          return idx !== 0 ? 
-           (
+          return idx !== 0 ? (
             <div
-              className={`text-white p-3 my-2 rounded-chat-bubble rounded-bl-none w-fit ${
+              className={`text-white p-3 my-2 rounded-chat-bubble rounded-bl-none max-w-xs ${
                 line.role === "user"
                   ? "self-end bg-bg-dark"
                   : "self-start bg-micbox-light"
@@ -152,8 +187,21 @@ const ChatBoxSpeechApi = () => {
                 line.content
               ) : (
                 <div>
-                  <p className="text-md">{line.content[0]}</p>
-                  <p className="text-white block ml-3 text-sm opacity-75">
+                  <p className="text-md"
+                     onClick={() => {
+                      speakText(line.content[0]); // Speak the assistant's response
+                    }}
+                  >
+                    <Image
+                      className="inline-block relative bottom-1 mr-1"
+                      src={speakerIcon}
+                      alt="speaker icon"
+                      height="20"
+                      width="20"
+                    />
+                    {line.content[0]}
+                  </p>
+                  <p className="text-white block ml-8 text-sm opacity-75">
                     {line.content[1]}
                   </p>
                 </div>
@@ -164,24 +212,42 @@ const ChatBoxSpeechApi = () => {
       </div>
       {/* SUGGESTON BOX */}
       <div
-        style={{ minHeight: "340px" }}
-        className="flex flex-col justify-end items-center w-full bg-gradient-to-b from-micbox-light to-micbox-dark rounded-t-xl relative mx-auto my-0 overflow-hidden"
+        style={{ height: "auto", minHeight: "250px" }}
+        className="flex flex-col justify-end items-center w-full bg-gradient-to-b from-micbox-light to-micbox-dark rounded-t-xl"
       >
-        {suggestions.length > 0 &&
-          suggestions.map((suggestion) => {
-            return (
-              <div
-                key={suggestion[0]}
-                className="self-start flex-col flex-start w-full py-2"
-              >
-                <p className="text-white block text-md ml-2">{suggestion[0]}</p>
-                <p className="text-white block ml-5 mb-3 text-sm opacity-75">
-                  {suggestion[1]}
-                </p>
-                <hr className="border-chat-container-light border"></hr>
-              </div>
-            );
-          })}
+        <div className="scroll-container overflow-y-scroll w-full">
+          {suggestions.length > 0 &&
+            suggestions.map((suggestion) => {
+              return (
+                <div
+                  key={suggestion[0]}
+                  className="self-start flex-col flex-start w-full"
+                >
+                  <div
+                    className="flex ml-2"
+                    onClick={() => {
+                      speakText(suggestion[0]); // Speak the assistant's response
+                    }}
+                  >
+                    <Image
+                      className="inline-block "
+                      src={speakerIcon}
+                      alt="speaker icon"
+                      height="20"
+                      width="20"
+                    />
+                    <p className="text-white block text-md ml-2">
+                      {suggestion[0]}
+                    </p>
+                  </div>
+                  <p className="text-white block ml-12 mb-1 text-sm opacity-75">
+                    {suggestion[1]}
+                  </p>
+                  <hr className="border-chat-container-light border"></hr>
+                </div>
+              );
+            })}
+        </div>
          <button
           className="rounded-full my-2"
           style={{ background: spacebarPressed ? "#fc5151" : "#13ABCB" }}
@@ -197,44 +263,6 @@ const ChatBoxSpeechApi = () => {
       </div>
     </div>
   );
-    // <div className="w-6/12 h-100 m-1 bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-0 rounded-xl flex flex-col justify-end items-center min-w-300 px-4 overflow-hidden">
-    //   {dialogue.map((line, idx) => {
-    //     return (
-    //       <div
-    //         style={{
-    //           color: "white",
-    //           margin: "20px 0",
-    //           padding: "20px",
-    //           borderRadius: "30px",
-    //           borderBottomLeftRadius: "0",
-    //         }}
-    //         className={
-    //           line.role === "user"
-    //             ? "self-end bg-slate-800"
-    //             : "self-start bg-micbox-light"
-    //         }
-    //         key={idx}
-    //       >
-    //         {line.content}
-    //       </div>
-    //     );
-    //   })}
-    //   <div style={{minHeight: "240px"}} className="flex flex-col justify-end items-center w-full bg-gradient-to-b from-micbox-light to-micbox-dark rounded-t-xl relative mx-auto my-0">
-    //     <button
-    //       className="rounded-full my-2"
-    //       style={{ background: spacebarPressed ? "#fc5151" : "#13ABCB" }}
-    //     >
-    //       <Image
-    //         className="text-white"
-    //         src={micIcon}
-    //         alt="mic icon"
-    //         height="75"
-    //         width="75"
-    //       />
-    //     </button>
-    //   </div>
-    // </div>
-  
 };
 
 export default ChatBoxSpeechApi;

@@ -5,25 +5,21 @@ import micIcon from "../../../public/micIcon.svg";
 import speakerIcon from "../../../public/speakerIcon.svg";
 import Image from "next/image";
 import { systemPrompt, scenarios } from "../../../utils/systemPrompt";
-// voices: Spanish: 52,
-interface Prompt {
-  role: "assistant" | "user" | "system";
-  content: string;
-}
 
-const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
+const ChatBoxWhisper = ({ selectedVoice, selectedLanguage, greeting }) => {
   const [promptHistory, setPromptHistory] = useState<Prompt[]>([
     {
       role: "system",
-      content: systemPrompt("French", "English", scenarios[0]),
+      content: systemPrompt(selectedLanguage, "English", scenarios[0]),
     },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);
   const [suggestions, setSuggestions] = useState<string[][]>([]); // [[suggested res, translation]]
   const [userInput, setUserInput] = useState<Prompt>({
     role: "user",
-    content: "Bonjour!",
+    content: greeting,
   });
+  const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null,
@@ -32,7 +28,7 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
     useState<SpeechSynthesisUtterance | null>(null);
 
   console.log("WHISPER PROMPT HIST", promptHistory);
-  console.log("WHISPER DIALOGUE", dialogue);
+  //console.log("WHISPER DIALOGUE", dialogue);
 
   useEffect(() => {
     if (dialogue.length > 0) {
@@ -43,6 +39,7 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
   }, [selectedVoice]);
 
   //// CHAT COMPLETION /////
+  console.log("USER INPUT", userInput)
   const getCompletion = async () => {
     try {
       const messages = userInput
@@ -68,7 +65,6 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
       ]);
 
       const result = JSON.parse(data.result);
-      console.log("WHIPSER DIALOGUE FROM GET COMP", dialogue);
       setDialogue([
         ...dialogue,
         userInput,
@@ -77,7 +73,7 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
       speakText(result.assistant[0]);
 
       setSuggestions(result.suggestions);
-      result.suggestions.map((suggestion) => speakText(suggestion[0]));
+      result.suggestions.map((suggestion: string) => speakText(suggestion[0]));
     } catch {
       throw new Error("something went wrong");
     }
@@ -86,6 +82,31 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
   useEffect(() => {
     getCompletion();
   }, [userInput]);
+
+  // toggle speech recognition on spacebar press/release
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === " " && !spacebarPressed) {
+        setSpacebarPressed(true);
+        startRecording();
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === " " && spacebarPressed) {
+        setSpacebarPressed(false);
+        stopRecording();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [spacebarPressed]);
 
   ////// SPEECH TO TEXT ///////
   // set up media recorder on mount
@@ -130,11 +151,6 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
                     new Error(`Request failed with status ${response.status}`)
                   );
                 }
-                // console.log("WHISPER DIALOGUE FROM RECORD", dialogue)
-                // setDialogue([
-                //   ...dialogue,
-                //   { role: "user", content: data.result },
-                // ]);
                 setUserInput({ role: "user", content: data.result });
               };
             } catch (error: any) {
@@ -237,7 +253,7 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
       </div>
       {/* SUGGESTON BOX */}
       <div
-        style={{ height: "auto", minHeight: "250px"}}
+        style={{ height: "auto", minHeight: "250px" }}
         className="flex flex-col justify-end items-center w-full bg-gradient-to-b from-micbox-light to-micbox-dark rounded-t-xl"
       >
         <div className="scroll-container overflow-y-scroll w-full">
@@ -275,7 +291,7 @@ const ChatBoxWhisper = ({ selectedVoice, selectedLanguage }) => {
         </div>
         <button
           onClick={recording ? stopRecording : startRecording}
-          style={{ background: recording ? "#fc5151" : "#13ABCB" }}
+          style={{ background: recording || spacebarPressed ? "#fc5151" : "#13ABCB" }}
           className="rounded-full my-2"
         >
           <Image

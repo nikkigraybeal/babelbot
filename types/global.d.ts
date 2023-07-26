@@ -9,3 +9,8 @@ interface Scenario {
   userRole: string;
   
 }
+
+interface Prompt {
+  role: "assistant" | "user" | "system";
+  content: string;
+}

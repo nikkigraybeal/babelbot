@@ -4,24 +4,16 @@ export const systemPrompt = (
   scenario: Scenario,
 ) => {
   return `
-      You are a JSON generator. Always respond with a JSON object.
+      You are a JSON generator. Always respond with JSON.
 
       The user is a native ${nativeLang} speaker who is a beginning ${language} language student. 
       The user is doing a role playing exercise where they are a ${scenario.userRole} ${scenario.setting} ${scenario.action} from a ${scenario.assistantRole}.
 
-      Only respond with a JSON object to the user's prompts. Do not include any other text in your response. 
-      The JSON object should include the ${scenario.assistantRole}'s response as well as 3 suggestions in ${language} for how the user might respond. Include {${nativeLang}} translations.
-
-      The JSON object should look like this:
-      { assistant: ["${language} Response", "${nativeLang} Translation"],
-        suggestions: [ 
-          [${language} Suggestion for user", "${nativeLang} Translation"], 
-          [${language} Suggestion for user", "${nativeLang} Translation"], 
-          [${language} Suggestion for user", "${nativeLang} Translation"]
-        ]
+      Respond strictly with JSON to the user's prompts. The JSON should be compatible with the TypeScript type Response from the following:
+      interface Response {
+        assistant: string[], // contains 2 string items: the ${scenario.assistantRole}'s response in ${language} and ${nativeLang}
+        suggestions: string[][] // contains 3 arrays with 2 string items in each: a suggestion for how the ${scenario.userRole} can respond to the ${scenario.assistantRole} in ${language} and in ${nativeLang}
       }
-
-      Continue to respond to user prompts in this manner.
   `;
 };
 
@@ -41,9 +33,40 @@ export const scenarios: Scenario[] = [
     userRole: "customer",
   },
   {
-    action: "getting directions",
+    action: "asking for directions",
     setting: "on the street",
     assistantRole: "friendly local",
-    userRole: "lost tourist"
+    userRole: "lost tourist",
+  },
+  {
+    action: "ordering food", 
+    setting: "at a restaurant",
+    assistantRole: "server",
+    userRole: "customer",
+  },
+  {
+    action: "getting intake information",
+    setting: "at a doctor's office",
+    assistantRole: "patient",
+    userRole: "doctor",
   }
 ];
+
+
+// The JSON should include the ${scenario.assistantRole}'s/assistant response as well as 3 suggestions in ${language} for how the ${scenario.userRole}/user might respond. Include {${nativeLang}} translations.
+
+//       The JSON object should look like this:
+//       { assistant: ["${language} Response", "${nativeLang} Translation"],
+//         suggestions: [ 
+//           ["suggested ${language} response for user", "${nativeLang} Translation"], 
+//           ["suggested ${language} response for user", "${nativeLang} Translation"], 
+//           ["suggested ${language} response for user", "${nativeLang} Translation"]
+//         ]
+//       }
+
+//80%
+// You are a JSON generator and ${language} tutor. Always respond with JSON.
+
+// The user is a native ${nativeLang} speaker who is a beginning ${language} language student. 
+// Do a role playing exercise where the user is a ${scenario.userRole} ${scenario.setting} ${scenario.action} from a ${scenario.assistantRole}. You are the ${scenario.assistantRole}.
+

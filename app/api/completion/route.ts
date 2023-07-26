@@ -31,19 +31,21 @@ export async function POST(req: NextRequest) {
       presence_penalty: 0,
     });
 
-    let result = completion.data.choices[0].message?.content
+    let result: string | undefined = completion.data.choices[0].message?.content
     console.log("RETURNED RESULT", result)
-    let slicedResult = result!.slice(result!.indexOf("{"))
-    console.log("SLICED RESULT", slicedResult)
+    // let slicedResult = result!.slice(result!.indexOf("{"))
+    // console.log("SLICED RESULT", slicedResult)
     try {
-      JSON.parse(slicedResult)
+      if (result) {
+        JSON.parse(result)
+      }
     } catch (err: any) {
       return NextResponse.json({
         error: `PARSE ERROR: ${err.message}`
       })
     }
     return NextResponse.json({
-      result: slicedResult,
+      result: result,
     });
   } catch (error) {
     return NextResponse.json({
