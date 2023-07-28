@@ -6,11 +6,11 @@ import Image from "next/image";
 import { systemPrompt, scenarios } from "@/utils/systemPrompt";
 
 
-const ChatBoxSpeechApi = ({ selectedVoice, selectedLanguage, greeting }) => {
+const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, greeting, scenario }) => {
   const [promptHistory, setPromptHistory] = useState<Prompt[]>([
     {
       role: "system",
-      content: systemPrompt(selectedLanguage, "English", scenarios[0]),
+      content: systemPrompt(selectedLanguage, nativeLanguage, scenarios[scenario]),
     },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);

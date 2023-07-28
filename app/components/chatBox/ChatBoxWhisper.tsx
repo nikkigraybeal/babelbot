@@ -6,18 +6,18 @@ import speakerIcon from "../../../public/speakerIcon.svg";
 import Image from "next/image";
 import { systemPrompt, scenarios } from "../../../utils/systemPrompt";
 
-const ChatBoxWhisper = ({ selectedVoice, selectedLanguage, greeting }) => {
+const ChatBoxWhisper = ({ nativeLanguage, selectedVoice, selectedLanguage, greeting, scenario }) => {
   const [promptHistory, setPromptHistory] = useState<Prompt[]>([
     {
       role: "system",
-      content: systemPrompt(selectedLanguage, "English", scenarios[0]),
+      content: systemPrompt(selectedLanguage, nativeLanguage, scenarios[scenario]),
     },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);
   const [suggestions, setSuggestions] = useState<string[][]>([]); // [[suggested res, translation]]
   const [userInput, setUserInput] = useState<Prompt>({
     role: "user",
-    content: greeting,
+    content: greeting
   });
   const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
   const [recording, setRecording] = useState(false);

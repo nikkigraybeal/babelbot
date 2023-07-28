@@ -4,18 +4,29 @@ export const systemPrompt = (
   scenario: Scenario,
 ) => {
   return `
-      You are a JSON generator. Always respond with JSON.
+      You are a JSON generator.
 
       The user is a native ${nativeLang} speaker who is a beginning ${language} language student. 
-      The user is doing a role playing exercise where they are a ${scenario.userRole} ${scenario.setting} ${scenario.action} from a ${scenario.assistantRole}.
+      The user is doing a role playing exercise where they are a ${scenario.userRole} ${scenario.setting} ${scenario.action} from a ${scenario.assistantRole}. 
 
       Respond strictly with JSON to the user's prompts. The JSON should be compatible with the TypeScript type Response from the following:
       interface Response {
         assistant: string[], // contains 2 string items: the ${scenario.assistantRole}'s response in ${language} and ${nativeLang}
-        suggestions: string[][] // contains 3 arrays with 2 string items in each: a suggestion for how the ${scenario.userRole} can respond to the ${scenario.assistantRole} in ${language} and in ${nativeLang}
+        suggestions: string[][] // contains 3 arrays with 2 string items in each: a suggestion for how the ${scenario.userRole} can respond to the ${scenario.assistantRole} in ${language} and in ${nativeLang}.
       }
   `;
 };
+
+
+
+// Respond strictly with JSON to the user's prompts. The JSON should follow this pattern:
+//       {
+//         assistant: "an array that contains 2 strng items: the ${scenario.assistantRole}'s response in ${language} and ${nativeLang}",
+//         suggestions: "an array that contains 3 arrays with 2 string items in each: a suggestion for how the ${scenario.userRole} can respond to the ${scenario.assistantRole} in ${language} and in ${nativeLang}"
+//       }
+
+// how to control gpt response if user responds in native lang or strays from the topic? 
+// do we bother or just give the user a way to regenerate the convo if it goes off the rails?
 
 // interface Scenario {
 //   action: string;

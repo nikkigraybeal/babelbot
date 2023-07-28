@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import ChatBoxSpeechApi from "./components/chatBox/ChatBoxSpeechApi";
 import ChatBoxWhisper from "./components/chatBox/ChatBoxWhisper";
+import { scenarios } from "@/utils/systemPrompt";
 
 // BCP-47 language codes, language, country, dialect, "Hello!"
 const langCodes = [
@@ -21,6 +22,7 @@ const langCodes = [
   ["en-IN", "English", "India", "Indian English", "Hello!"],
   ["en-NZ", "English", "New Zealand", "New Zealand English", "Hello!"],
   ["en-US", "English", "United States", "US English", "Hello!"],
+  ["en", "English", "United States", "US English", "Hello!"],
   ["en-ZA", "English", "South Africa", "English (South Africa)", "Hello!"],
   ["es-AR", "Spanish", "Argentina", "Argentine Spanish", "¡Hola!"],
   ["es-CL", "Spanish", "Chile", "Chilean Spanish", "¡Hola!"],
@@ -43,6 +45,7 @@ const langCodes = [
   ["ko-KR", "Korean", "Republic of Korea", "Korean (Republic of Korea)", "안녕하세요!"],
   ["nl-BE", "Dutch", "Belgium", "Belgian Dutch", "Hallo!"],
   ["nl-NL", "Dutch", "The Netherlands", "Standard Dutch (The Netherlands)", "Hallo!"],
+  ["nb-NO", "Norwegian", "Norway", "Norwegian (Norway)", "Hei!"],
   ["no-NO", "Norwegian", "Norway", "Norwegian (Norway)", "Hei!"],
   ["pl-PL", "Polish", "Poland", "Polish (Poland)", "Witaj!"],
   ["pt-BR", "Portuguese", "Brazil", "Brazilian Portuguese", "Olá!"],
@@ -55,9 +58,9 @@ const langCodes = [
   ["ta-LK", "Tamil", "Sri Lanka", "Sri Lankan Tamil", "அவரத்தின் வணக்கம்!"],
   ["th-TH", "Thai", "Thailand", "Thai (Thailand)", "สวัสดี!"],
   ["tr-TR", "Turkish", "Turkey", "Turkish (Turkey)", "Merhaba!"],
-  ["zh-CN", "Chinese", "China", "Mainland China, simple chars", "你好！"],
-  ["zh-HK", "Chinese", "Hong Kong", "Hong Kong, trad chars", "你好！"],
-  ["zh-TW", "Chinese", "Taiwan", "Taiwan, trad chars", "你好！"],
+  ["zh-CN", "Chinese", "China", "Mainland China, simple chars", "你好"],
+  ["zh-HK", "Chinese", "Hong Kong", "Hong Kong, trad chars", "你好"],
+  ["zh-TW", "Chinese", "Taiwan", "Taiwan, trad chars", "你好"],
 ];
 
 interface Voice {
@@ -72,9 +75,11 @@ export default function Home() {
   const [availableVoices, setAvailableVoices] = useState<Voice[] | null>(null);
   const [voices, setVoices] = useState<string[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | undefined | null>(null);
+  const [nativeLanguage, setNativeLanguage] = useState<string | null>(null)
   const [languages, setLanguages] = useState<string[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<string | null>(null)
+  const [scenario, setScenario] = useState<string | null>(null)
 
   useEffect(() => {
     // fetch available voices on mount and create Voice obj array
@@ -89,7 +94,7 @@ export default function Home() {
                 synthObj: sObj,
                 lang: "",
                 dialect: "",
-                greeting: "",
+                greeting: "Hello",
               }
             : {
                 synthObj: sObj,
@@ -132,23 +137,34 @@ export default function Home() {
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     // setSelectedVoice to synthObj
     const selected = e.target.value; // name - dialect
-    const voiceName = selected.split("-")[0];
+    const voiceName = selected.split(" - ")[0];
     const voiceObj = availableVoices!.find((voice) => {
       return voice.synthObj.name.trim() === voiceName.trim();
     });
     setSelectedVoice(voiceObj?.synthObj);
     if (voiceObj) {
       setGreeting(voiceObj.greeting)
+    } else {
+      setGreeting("Hello")
     }
   };
 
   return (
     <main className="flex flex-col items-center">
       <div className="flex justify-evenly items-center w-full">
-        <div className="flex justify-center w-4/12 h-10 gap-2">
+        <div className="flex flex-col items-start w-4/12 h-10 gap-2">
+          {/* NATIVE LANG */}
+        <select className="text-white border p-2 rounded-lg mb-3 bg-bg-dark h-10" onChange={(e) => setNativeLanguage(e.target.value)}>
+            <option value="">select native language</option>
+            {languages.map((lang) => (
+              <option key={lang} value={lang}>
+                {lang}
+              </option>
+            ))}
+          </select>
           {/* LANG DD */}
           <select className="text-white border p-2 rounded-lg mb-3 bg-bg-dark h-10" onChange={handleLanguageChange}>
-            <option value="">select a language</option>
+            <option value="">select language to learn</option>
             {languages.map((lang) => (
               <option key={lang} value={lang}>
                 {lang}
@@ -161,6 +177,15 @@ export default function Home() {
             {voices.map((voice) => (
               <option key={voice} value={`${voice}`}>
                 {voice}
+              </option>
+            ))}
+          </select>
+           {/* SCENARIO DD */}
+           <select className="text-white border p-2 rounded-lg mb-3 bg-bg-dark h-10 w-48" onChange={(e) => setScenario(e.target.value)}>
+            <option value="">select a scenario</option>
+            {scenarios.map((scenario, idx) => (
+              <option key={scenario.action} value={idx}>
+                {`${scenario.action} ${scenario.setting} from a ${scenario.assistantRole}`}
               </option>
             ))}
           </select>
@@ -187,16 +212,20 @@ export default function Home() {
       </div>
       {speechToText === "speech api" && (
         <ChatBoxSpeechApi
+          nativeLanguage={nativeLanguage}
           selectedLanguage={selectedLanguage}
           selectedVoice={selectedVoice}
           greeting={greeting}
+          scenario={scenario}
         />
       )}
       {speechToText === "whisper" && (
         <ChatBoxWhisper
+          nativeLanguage={nativeLanguage}
           selectedLanguage={selectedLanguage}
           selectedVoice={selectedVoice}
           greeting={greeting}
+          scenario={scenario}
         />
       )}
     </main>
