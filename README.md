@@ -19,7 +19,7 @@ To get started with the app, follow these steps:
 Clone this repository to your local machine.
 
 Create a .env file at the root of the project and paste your OpenAI API key there like so: 
-OPENAI_API_KEY=<your api key>
+OPENAI_API_KEY="your api key"
 
 Install the required dependencies by running npm install
 
