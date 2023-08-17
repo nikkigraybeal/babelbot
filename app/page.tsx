@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import ChatBoxSpeechApi from "./components/chatBox/ChatBoxSpeechApi";
 import ChatBoxWhisper from "./components/chatBox/ChatBoxWhisper";
 import { scenarios } from "@/utils/systemPrompt";
+import Login from "./components/Login"
 
 // BCP-47 language codes, language, country, dialect, "Hello!"
 const langCodes = [
@@ -71,6 +73,7 @@ interface Voice {
 }
 
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [speechToText, setSpeechToText] = useState<"speech api" | "whisper" | "">("");
   const [availableVoices, setAvailableVoices] = useState<Voice[] | null>(null);
   const [voices, setVoices] = useState<string[]>([]);
@@ -80,6 +83,22 @@ export default function Home() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<string | null>(null)
   const [scenario, setScenario] = useState<string | null>(null)
+  const { data: session } = useSession()
+
+  useEffect(() => {
+    if (session) {
+      setIsLoggedIn(true)
+    }
+  })
+
+  const checkDropDownValues = () => {
+    if (selectedVoice && nativeLanguage && selectedLanguage && scenario) {
+      return true
+    }
+    alert("choose a value from each drop down list")
+    setSpeechToText("")
+    return false
+  }
 
   useEffect(() => {
     // fetch available voices on mount and create Voice obj array
@@ -151,6 +170,10 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center">
+      {!isLoggedIn && (
+        <Login />
+      )}
+      {isLoggedIn && (
       <div className="flex justify-evenly items-center w-full">
         <div className="flex flex-col items-start w-4/12 h-10 gap-2">
           {/* NATIVE LANG */}
@@ -190,7 +213,7 @@ export default function Home() {
             ))}
           </select>
         </div>
-        <h1 className="text-white text-3xl m-7  place-self-center">BabelBot</h1>
+        <h1 className="text-white text-3xl m-7  place-self-center">Milti-Llingual ChatBot</h1>
         <div className="flex justify-center w-4/12 h-10 gap-2">
           <button
             onClick={() => setSpeechToText("whisper")}
@@ -208,9 +231,11 @@ export default function Home() {
           >
             speech api
           </button>
+          <button className="text-white border p-2 rounded-lg mb-3 bg-bg-dark hover:bg-slate-700 h-10" onClick={() => signOut()}>Sign Out</button>
         </div>
       </div>
-      {speechToText === "speech api" && (
+      )}
+      {speechToText === "speech api" && checkDropDownValues() && (
         <ChatBoxSpeechApi
           nativeLanguage={nativeLanguage}
           selectedLanguage={selectedLanguage}
@@ -219,7 +244,7 @@ export default function Home() {
           scenario={scenario}
         />
       )}
-      {speechToText === "whisper" && (
+      {speechToText === "whisper" && checkDropDownValues() && (
         <ChatBoxWhisper
           nativeLanguage={nativeLanguage}
           selectedLanguage={selectedLanguage}

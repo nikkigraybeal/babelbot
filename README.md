@@ -1,16 +1,16 @@
 ## Multilingual Speech Chatbot with Whisper and GPT from OpenAI
-This is an innovative chatbot application that enables seamless conversations in multiple languages using speech. Powered by advanced technologies like Whisper and GPT from OpenAI, the app is designed to break language barriers and enhance language learning experiences.
+This is a chatbot application that enables conversations in multiple languages using speech. Powered by a Whisper and GPT from OpenAI, the app is designed to enhance language learning experiences.
 
 ### Key Features:
-Speech Interaction: Users can effortlessly converse with the chatbot using speech-to-text input, allowing for natural and authentic conversations.
+Speech Interaction: Users can converse with the chatbot using speech-to-text input, allowing for natural conversations.
 
-Speech Responses: The chatbot responds in speech, making the interactions more immersive and engaging.
+Speech Responses: The chatbot responds in speech.
 
 Written Translations: To aid understanding, the app provides written translations alongside the spoken responses.
 
-Language Selection: Users can choose their native language, the language they are learning, and even the conversation topic, creating a personalized learning experience.
+Language Selection: Users can choose their native language, the language they are learning, and the conversation topic, creating a personalized learning experience.
 
-Intelligent Suggestions: The chatbot offers intelligent reply suggestions, facilitating dynamic and interactive communication.
+Intelligent Suggestions: The chatbot offers intelligent reply suggestions, facilitating interactive communication.
 
 
 ## Getting Started:

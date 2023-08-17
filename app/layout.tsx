@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Provider from './components/Provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,7 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gradient-to-r from-bg-dark via-bg-light to-bg-dark h-screen">{children}</body>
+      <body className="bg-gradient-to-r from-bg-dark via-bg-light to-bg-dark h-screen">    
+        <Provider>
+         {children}
+        </Provider>
+      </body>
     </html>
   )
 }
