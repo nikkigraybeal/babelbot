@@ -1,4 +1,3 @@
-import { timeStamp } from 'console'
 import { Schema, model, models } from 'mongoose'
 
 const UserSchema = new Schema({
@@ -44,6 +43,6 @@ const UserSchema = new Schema({
 }
 )
 
-const User = models.User || model('User', UserSchema, "nikkisUsers")
+const User = models.User || model('User', UserSchema, "users")
 
 export default User

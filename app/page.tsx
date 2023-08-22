@@ -5,6 +5,7 @@ import ChatBoxSpeechApi from "./components/chatBox/ChatBoxSpeechApi";
 import ChatBoxWhisper from "./components/chatBox/ChatBoxWhisper";
 import { scenarios } from "@/utils/systemPrompt";
 import Login from "./components/Login"
+import GeneratedImage from "./components/GeneratedImage"
 
 // BCP-47 language codes, language, country, dialect, "Hello!"
 const langCodes = [
@@ -253,6 +254,7 @@ export default function Home() {
           scenario={scenario}
         />
       )}
+      <GeneratedImage />
     </main>
   );
 }
