@@ -40,22 +40,13 @@ const ChatBoxWhisper = ({
   );
   const [synthesizedSpeech, setSynthesizedSpeech] =
     useState<SpeechSynthesisUtterance | null>(null);
-
-  console.log("WHISPER PROMPT HIST", promptHistory);
-  //console.log("WHISPER DIALOGUE", dialogue);
-
-  useEffect(() => {
-    if (dialogue.length > 0) {
-      const last = dialogue.length - 1;
-      speakText(dialogue[last].content[0]);
-      suggestions.map((suggestion) => speakText(suggestion[0]));
-    }
-  }, [voice]);
+  const [isLoading, setIsLoading] = useState(false);
 
   //// CHAT COMPLETION /////
   console.log("USER INPUT", userInput);
   const getCompletion = async () => {
     try {
+      setIsLoading(true);
       const messages = userInput
         ? [...promptHistory, userInput]
         : [...promptHistory];
@@ -79,11 +70,13 @@ const ChatBoxWhisper = ({
       ]);
 
       const result = JSON.parse(data.result);
+      setIsLoading(false);
       setDialogue([
         ...dialogue,
-        userInput,
+        { ...userInput },
         { role: "assistant", content: result.assistant },
       ]);
+      setUserInput({ ...userInput, content: "" });
       speakText(result.assistant[0]);
 
       setSuggestions(result.suggestions);
@@ -94,6 +87,10 @@ const ChatBoxWhisper = ({
   };
 
   useEffect(() => {
+    if (!userInput.content) {
+      return;
+    }
+    setDialogue([...dialogue, { ...userInput }]);
     getCompletion();
   }, [userInput]);
 
@@ -150,8 +147,8 @@ const ChatBoxWhisper = ({
               const reader = new FileReader();
               reader.readAsDataURL(audioBlob);
               reader.onloadend = async function () {
-                let base64Audio
-                if (typeof reader.result === 'string') {
+                let base64Audio;
+                if (typeof reader.result === "string") {
                   base64Audio = reader.result?.split(",")[1]; // Remove the data URL prefix
                 }
                 const response = await fetch("/api/transcribe", {
@@ -267,6 +264,7 @@ const ChatBoxWhisper = ({
             ""
           );
         })}
+        {isLoading && "loading..."}
       </div>
       {/* SUGGESTON BOX */}
       <div
@@ -284,7 +282,7 @@ const ChatBoxWhisper = ({
                   <div
                     className="flex ml-2"
                     onClick={() => {
-                      speakText(suggestion[0]); // Speak the assistant's response
+                      speakText(suggestion[0]); // Speak the suggestion
                     }}
                   >
                     <Image

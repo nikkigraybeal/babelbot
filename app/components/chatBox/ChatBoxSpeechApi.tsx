@@ -36,17 +36,11 @@ const ChatBoxSpeechApi = ({
   const recognitionRef = useRef<any>(null);
   const [synthesizedSpeech, setSynthesizedSpeech] =
     useState<SpeechSynthesisUtterance | null>(null);
-
-  useEffect(() => {
-    if (dialogue.length > 0) {
-      const last = dialogue.length - 1;
-      speakText(dialogue[last].content[0]);
-      suggestions.map((suggestion) => speakText(suggestion[0]));
-    }
-  }, [voice]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getCompletion = async () => {
     try {
+      setIsLoading(true);
       const messages = userInput
         ? [...promptHistory, userInput]
         : [...promptHistory];
@@ -72,19 +66,27 @@ const ChatBoxSpeechApi = ({
       const result = JSON.parse(data.result);
       setDialogue([
         ...dialogue,
-        userInput,
+        { ...userInput },
         { role: "assistant", content: result.assistant },
       ]);
+      setUserInput({ ...userInput, content: "" });
+      setIsLoading(false);
       speakText(result.assistant[0]);
 
       setSuggestions(result.suggestions);
-      result.suggestions.map((suggestion: string[]) => speakText(suggestion[0]));
+      result.suggestions.map((suggestion: string[]) =>
+        speakText(suggestion[0]),
+      );
     } catch {
       throw new Error("something went wrong");
     }
   };
 
   useEffect(() => {
+    if (!userInput.content) {
+      return;
+    }
+    setDialogue([...dialogue, { ...userInput }]);
     getCompletion();
   }, [userInput]);
 
@@ -112,7 +114,7 @@ const ChatBoxSpeechApi = ({
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [spacebarPressed]);
-  console.log("lang", language, "voice", voice);
+
   // start recording
   const handleStartRecognition = () => {
     if (!recognitionRef.current) {
@@ -124,7 +126,6 @@ const ChatBoxSpeechApi = ({
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = false;
       recognitionRef.current.onstart = () =>
-        console.log("Speech recognition started.");
       recognitionRef.current.onresult = (event: any) => {
         const transcript = Array.from(event.results)
           .map((result: any) => result[0].transcript)
@@ -136,7 +137,6 @@ const ChatBoxSpeechApi = ({
       recognitionRef.current.onerror = (event: any) =>
         console.error("Speech recognition error:", event.error);
       recognitionRef.current.onend = () => {
-        console.log("Speech recognition ended.");
         if (spacebarPressed) {
           recognitionRef.current!.start();
         }
@@ -150,7 +150,6 @@ const ChatBoxSpeechApi = ({
   const handleStopRecognition = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
-      console.log("Speech recognition stopped.");
     }
   };
 
@@ -178,7 +177,7 @@ const ChatBoxSpeechApi = ({
       window.speechSynthesis.speak(utterance);
     }
   };
-
+  
   return (
     <div className="w-6/12 min-h-[75vh] bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-1 p-2 rounded-xl flex flex-col justify-end items-center min-w-[300px]">
       <div className="scroll-container overflow-y-scroll w-full flex flex-col justfy-end items-center">
@@ -222,6 +221,7 @@ const ChatBoxSpeechApi = ({
             ""
           );
         })}
+        {isLoading && "loading..."}
       </div>
       {/* SUGGESTON BOX */}
       <div

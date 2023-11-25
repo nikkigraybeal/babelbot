@@ -92,7 +92,6 @@ export default function OptionsModal({
     const voiceObj = availableVoices!.find((voice) => {
       return voice.synthObj.name.trim() === voiceName.trim();
     });
-    console.log("VOICE OBJ", voiceObj, voiceObj?.synthObj)
     if (voiceObj) {
       setVoice(voiceObj.synthObj);
       setGreeting(voiceObj.greeting);
