@@ -6,18 +6,32 @@ import speakerIcon from "../../../public/speakerIcon.svg";
 import Image from "next/image";
 import { systemPrompt, scenarios } from "../../../utils/systemPrompt";
 
-const ChatBoxWhisper = ({ nativeLanguage, selectedVoice, selectedLanguage, greeting, scenario }) => {
+interface Props {
+  nativeLanguage: string;
+  voice: SpeechSynthesisVoice | null;
+  language: string;
+  greeting: string;
+  scenario: number | null;
+}
+
+const ChatBoxWhisper = ({
+  nativeLanguage,
+  voice,
+  language,
+  greeting,
+  scenario,
+}: Props) => {
   const [promptHistory, setPromptHistory] = useState<Prompt[]>([
     {
       role: "system",
-      content: systemPrompt(selectedLanguage, nativeLanguage, scenarios[scenario]),
+      content: systemPrompt(language, nativeLanguage, scenarios[scenario!]),
     },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);
   const [suggestions, setSuggestions] = useState<string[][]>([]); // [[suggested res, translation]]
   const [userInput, setUserInput] = useState<Prompt>({
     role: "user",
-    content: greeting
+    content: greeting,
   });
   const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
   const [recording, setRecording] = useState(false);
@@ -36,10 +50,10 @@ const ChatBoxWhisper = ({ nativeLanguage, selectedVoice, selectedLanguage, greet
       speakText(dialogue[last].content[0]);
       suggestions.map((suggestion) => speakText(suggestion[0]));
     }
-  }, [selectedVoice]);
+  }, [voice]);
 
   //// CHAT COMPLETION /////
-  console.log("USER INPUT", userInput)
+  console.log("USER INPUT", userInput);
   const getCompletion = async () => {
     try {
       const messages = userInput
@@ -136,7 +150,10 @@ const ChatBoxWhisper = ({ nativeLanguage, selectedVoice, selectedLanguage, greet
               const reader = new FileReader();
               reader.readAsDataURL(audioBlob);
               reader.onloadend = async function () {
-                const base64Audio = reader.result?.split(",")[1]; // Remove the data URL prefix
+                let base64Audio
+                if (typeof reader.result === 'string') {
+                  base64Audio = reader.result?.split(",")[1]; // Remove the data URL prefix
+                }
                 const response = await fetch("/api/transcribe", {
                   method: "POST",
                   headers: {
@@ -197,8 +214,8 @@ const ChatBoxWhisper = ({ nativeLanguage, selectedVoice, selectedLanguage, greet
   const speakText = (text: string) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = selectedVoice;
-      utterance.lang = selectedLanguage;
+      utterance.voice = voice;
+      utterance.lang = language;
       utterance.text = text;
       utterance.rate = 0.8;
       setSynthesizedSpeech(utterance);
@@ -208,7 +225,7 @@ const ChatBoxWhisper = ({ nativeLanguage, selectedVoice, selectedLanguage, greet
 
   return (
     // CHAT CONTAINER
-    <div className="w-6/12 h-chat-container bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-0 p-2 rounded-xl flex flex-col justify-end items-center min-w-300">
+    <div className="w-6/12 min-h-[75vh] bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-1 p-2 rounded-xl flex flex-col justify-end items-center min-w-[300px]">
       <div className="scroll-container overflow-y-scroll w-full flex flex-col justfy-end items-center">
         {dialogue.map((line, idx) => {
           return idx != 0 ? (
@@ -291,7 +308,9 @@ const ChatBoxWhisper = ({ nativeLanguage, selectedVoice, selectedLanguage, greet
         </div>
         <button
           onClick={recording ? stopRecording : startRecording}
-          style={{ background: recording || spacebarPressed ? "#fc5151" : "#13ABCB" }}
+          style={{
+            background: recording || spacebarPressed ? "#fc5151" : "#13ABCB",
+          }}
           className="rounded-full my-2"
         >
           <Image

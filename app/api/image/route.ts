@@ -19,10 +19,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const imagePrompt = await req.json(); // res now contains body
-    console.log("prompt", imagePrompt)
+    console.log("prompt", imagePrompt.prompt)
 
     const response = await openai.createImage({
-      prompt: imagePrompt,
+      prompt: imagePrompt.prompt,
       n: 1,
       size: "1024x1024",
     });
@@ -30,27 +30,29 @@ export async function POST(req: NextRequest) {
 
     let result: string | undefined = image_url
     console.log("RETURNED RESULT", result)
-    // let slicedResult = result!.slice(result!.indexOf("{"))
-    // console.log("SLICED RESULT", slicedResult)
-    // try {
-    //   if (result) {
-    //     JSON.parse(result)
-    //   }
-    // } catch (err: any) {
-    //   return NextResponse.json({
-    //     error: `PARSE ERROR: ${err.message}`
-    //   })
-    // }
     return NextResponse.json({
       result: result,
-    });
-  } catch (error) {
-    return NextResponse.json({
-      error: {
-        message: "An error occurred during your request.",
-      },
-    });
+    }) 
+  } catch (error: any) {
+    if (error.response) {
+      console.log("STATUS:", error.response.status);
+      console.log("ERROR:", error.response.data);
+      return NextResponse.json({
+        error: {
+          message: "An error occurred during your request.",
+        },
+      })
+    } else {
+      console.log("ERROR:", error.message);
+      return NextResponse.json({
+        error: {
+          message: "An error occurred during your request.",
+        },
+      })
+    }
   }
+
+ 
 }
 
 

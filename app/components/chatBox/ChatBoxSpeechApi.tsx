@@ -5,27 +5,37 @@ import speakerIcon from "../../../public/speakerIcon.svg";
 import Image from "next/image";
 import { systemPrompt, scenarios } from "@/utils/systemPrompt";
 
+interface Props {
+  nativeLanguage: string;
+  voice: SpeechSynthesisVoice | null;
+  language: string;
+  greeting: string;
+  scenario: number | null;
+}
 
-const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, greeting, scenario }) => {
+const ChatBoxSpeechApi = ({
+  nativeLanguage,
+  voice,
+  language,
+  greeting,
+  scenario,
+}: Props) => {
   const [promptHistory, setPromptHistory] = useState<Prompt[]>([
     {
       role: "system",
-      content: systemPrompt(selectedLanguage, nativeLanguage, scenarios[scenario]),
+      content: systemPrompt(language, nativeLanguage, scenarios[scenario!]),
     },
   ]);
   const [dialogue, setDialogue] = useState<Prompt[]>([]);
   const [suggestions, setSuggestions] = useState<string[][]>([]); // [[suggested res, translation]]
   const [userInput, setUserInput] = useState<Prompt>({
     role: "user",
-    content: greeting
+    content: greeting,
   });
   const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
   const recognitionRef = useRef<any>(null);
   const [synthesizedSpeech, setSynthesizedSpeech] =
     useState<SpeechSynthesisUtterance | null>(null);
-
-  console.log("SPEECH API PROMPT HIST", promptHistory)
-  console.log("SPEECH API DIALOGUE", dialogue)
 
   useEffect(() => {
     if (dialogue.length > 0) {
@@ -33,7 +43,7 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
       speakText(dialogue[last].content[0]);
       suggestions.map((suggestion) => speakText(suggestion[0]));
     }
-  }, [selectedVoice]);
+  }, [voice]);
 
   const getCompletion = async () => {
     try {
@@ -50,8 +60,8 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
 
       const data = await res.json();
       if (data.error) {
-       console.log("ERROR", data.error)
-       return
+        console.log("ERROR", data.error);
+        return;
       }
 
       setPromptHistory([
@@ -60,16 +70,15 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
       ]);
 
       const result = JSON.parse(data.result);
-      console.log("SPEECH API DIALOGUE FROM GET COMP", dialogue)
       setDialogue([
-        ...dialogue, 
+        ...dialogue,
         userInput,
         { role: "assistant", content: result.assistant },
       ]);
       speakText(result.assistant[0]);
 
       setSuggestions(result.suggestions);
-      result.suggestions.map((suggestion) => speakText(suggestion[0]));
+      result.suggestions.map((suggestion: string[]) => speakText(suggestion[0]));
     } catch {
       throw new Error("something went wrong");
     }
@@ -103,25 +112,25 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [spacebarPressed]);
-
+  console.log("lang", language, "voice", voice);
   // start recording
   const handleStartRecognition = () => {
     if (!recognitionRef.current) {
       const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.lang = voice?.lang;
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = false;
-
       recognitionRef.current.onstart = () =>
         console.log("Speech recognition started.");
       recognitionRef.current.onresult = (event: any) => {
         const transcript = Array.from(event.results)
           .map((result: any) => result[0].transcript)
           .join("");
-       
+
         setUserInput({ role: "user", content: transcript });
-        
       };
 
       recognitionRef.current.onerror = (event: any) =>
@@ -133,9 +142,10 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
         }
       };
     }
+    recognitionRef.current.lang = voice?.lang;
     recognitionRef.current!.start();
   };
-  
+
   // stop recording
   const handleStopRecognition = () => {
     if (recognitionRef.current) {
@@ -149,7 +159,7 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
     if (synthesizedSpeech) {
       synthesizedSpeech.onend = () => {
         // The speech synthesis has finished.
-        // You can implement additional logic here if needed.
+        // implement additional logic here if needed.
       };
       synthesizedSpeech.onerror = (error) => {
         console.error("Error during speech synthesis:", error);
@@ -160,8 +170,8 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
   const speakText = (text: string) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = selectedVoice;
-      utterance.lang = selectedLanguage;
+      utterance.voice = voice;
+      utterance.lang = language;
       utterance.text = text;
       utterance.rate = 0.8;
       setSynthesizedSpeech(utterance);
@@ -170,7 +180,7 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
   };
 
   return (
-    <div className="w-6/12 h-chat-container bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-0 p-2 rounded-xl flex flex-col justify-end items-center min-w-300">
+    <div className="w-6/12 min-h-[75vh] bg-gradient-to-b from-chat-container-dark to-chat-container-light relative mx-auto my-1 p-2 rounded-xl flex flex-col justify-end items-center min-w-[300px]">
       <div className="scroll-container overflow-y-scroll w-full flex flex-col justfy-end items-center">
         {dialogue.map((line, idx) => {
           return idx !== 0 ? (
@@ -187,8 +197,9 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
                 line.content
               ) : (
                 <div>
-                  <p className="text-md"
-                     onClick={() => {
+                  <p
+                    className="text-md"
+                    onClick={() => {
                       speakText(line.content[0]); // Speak the assistant's response
                     }}
                   >
@@ -207,7 +218,9 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
                 </div>
               )}
             </div>
-          ) : ""
+          ) : (
+            ""
+          );
         })}
       </div>
       {/* SUGGESTON BOX */}
@@ -248,7 +261,7 @@ const ChatBoxSpeechApi = ({ nativeLanguage, selectedVoice, selectedLanguage, gre
               );
             })}
         </div>
-         <button
+        <button
           className="rounded-full my-2"
           style={{ background: spacebarPressed ? "#fc5151" : "#13ABCB" }}
         >

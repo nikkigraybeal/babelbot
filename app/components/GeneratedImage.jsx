@@ -13,7 +13,7 @@ export default function GeneratedImage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: userInput,
+        body: JSON.stringify({prompt: userInput}),
       });
 
       const data = await res.json();
@@ -25,7 +25,7 @@ export default function GeneratedImage() {
 
       const result = data.result;
       const encodedResult = encodeURIComponent(result)
-      setImageUrl(encodedResult)
+      setImageUrl(result)
     } catch {
       throw new Error("something went wrong");
     }
@@ -45,7 +45,7 @@ export default function GeneratedImage() {
 
             {imageUrl && (
         <div style={{ border: "1px solid white" }}>
-          <Image src={imageUrl} height={512} width={512} />
+          <Image src={imageUrl} height={512} width={512} alt="generated image" />
         </div>
       )}
  

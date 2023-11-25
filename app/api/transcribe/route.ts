@@ -12,13 +12,12 @@ const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
-// This function handles POST requests to the /api/speechToText route
+
 export async function POST(request: NextRequest) {
   // Check if the OpenAI API key is configured
   if (!configuration.apiKey) {
     return NextResponse.json({ error: "OpenAI API key not configured, please follow instructions in README.md" }, {status:500});
   }
-  // Parse the request body
   const req = await request.json()
   // Extract the audio data from the request body
   const base64Audio = req.audio;
@@ -30,7 +29,6 @@ export async function POST(request: NextRequest) {
     // Return the transcribed text in the response
     return NextResponse.json({result: text}, {status:200});
   } catch(error: any) {
-    // Handle any errors that occur during the request
     if (error.response) {
       console.error(error.response.status, error.response.data);
       return NextResponse.json({ error: error.response.data }, {status:500});
@@ -41,15 +39,19 @@ export async function POST(request: NextRequest) {
   }
 }
 // This function converts audio data to text using the OpenAI API
-async function convertAudioToText(audioData: any) {
+async function convertAudioToText(audioData: Buffer) {
   // Convert the audio data to MP3 format
   const mp3AudioData = await convertAudioToMp3(audioData);
   // Write the MP3 audio data to a file
   const outputPath = '/tmp/output.mp3';
   fs.writeFileSync(outputPath, mp3AudioData);
+
+  // Type assertion to treat ReadStream as File
+  const fileStream: fs.ReadStream = fs.createReadStream(outputPath) as fs.ReadStream;
+
   // Transcribe the audio
   const response = await openai.createTranscription(
-      fs.createReadStream(outputPath),
+      fileStream as unknown as File,
       'whisper-1'
   );
   // Delete the temporary file
