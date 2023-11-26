@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { langData } from "@/data/languageCodes";
+import { langData } from "@/data/languages";
 import { scenarios } from "@/utils/systemPrompt";
 
 interface Voice {

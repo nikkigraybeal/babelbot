@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const messages = await req.json(); // res now contains body
-    console.log("MESSAGES", messages)
        
     const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
@@ -32,9 +31,6 @@ export async function POST(req: NextRequest) {
     });
 
     let result: string | undefined = completion.data.choices[0].message?.content
-    console.log("RETURNED RESULT", result)
-    // let slicedResult = result!.slice(result!.indexOf("{"))
-    // console.log("SLICED RESULT", slicedResult)
     try {
       if (result) {
         JSON.parse(result)

@@ -1,10 +1,11 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import "../../globals.css";
 import micIcon from "../../../public/micIcon.svg";
 import speakerIcon from "../../../public/speakerIcon.svg";
 import Image from "next/image";
 import { systemPrompt, scenarios } from "../../../utils/systemPrompt";
+import { langData } from "@/data/languages";
 
 interface Props {
   nativeLanguage: string;
@@ -33,7 +34,7 @@ const ChatBoxWhisper = ({
     role: "user",
     content: greeting,
   });
-  const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
+  //const [spacebarPressed, setSpacebarPressed] = useState<boolean>(false);
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null,
@@ -41,6 +42,8 @@ const ChatBoxWhisper = ({
   const [synthesizedSpeech, setSynthesizedSpeech] =
     useState<SpeechSynthesisUtterance | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const langCode = langData.find(lang => { lang.language === language})?.langCode
 
   //// CHAT COMPLETION /////
   console.log("USER INPUT", userInput);
@@ -94,31 +97,6 @@ const ChatBoxWhisper = ({
     getCompletion();
   }, [userInput]);
 
-  // toggle speech recognition on spacebar press/release
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === " " && !spacebarPressed) {
-        setSpacebarPressed(true);
-        startRecording();
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === " " && spacebarPressed) {
-        setSpacebarPressed(false);
-        stopRecording();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [spacebarPressed]);
-
   ////// SPEECH TO TEXT ///////
   // set up media recorder on mount
   useEffect(() => {
@@ -136,12 +114,6 @@ const ChatBoxWhisper = ({
           };
           newMediaRecorder.onstop = async () => {
             const audioBlob = new Blob(chunks, { type: "audio/webm" });
-            // const audioUrl = URL.createObjectURL(audioBlob);
-            // const audio = new Audio(audioUrl);
-            // audio.onerror = function (err) {
-            //   console.error('Error playing audio:', err);
-            // };
-            // audio.play();
 
             try {
               const reader = new FileReader();
@@ -156,7 +128,7 @@ const ChatBoxWhisper = ({
                   headers: {
                     "Content-Type": "application/json",
                   },
-                  body: JSON.stringify({ audio: base64Audio }),
+                  body: JSON.stringify({ audio: base64Audio, language: langCode }),
                 });
                 const data = await response.json();
                 if (response.status !== 200) {
@@ -180,7 +152,6 @@ const ChatBoxWhisper = ({
 
   // Function to start recording
   const startRecording = () => {
-    console.log("START REC");
     if (mediaRecorder) {
       mediaRecorder.start();
       setRecording(true);
@@ -188,7 +159,6 @@ const ChatBoxWhisper = ({
   };
   // Function to stop recording
   const stopRecording = () => {
-    console.log("STOP REC");
     if (mediaRecorder) {
       mediaRecorder.stop();
       setRecording(false);
@@ -200,7 +170,7 @@ const ChatBoxWhisper = ({
     if (synthesizedSpeech) {
       synthesizedSpeech.onend = () => {
         // The speech synthesis has finished.
-        // You can implement additional logic here if needed.
+        // implement additional logic here if needed.
       };
       synthesizedSpeech.onerror = (error) => {
         console.error("Error during speech synthesis:", error);
@@ -307,7 +277,7 @@ const ChatBoxWhisper = ({
         <button
           onClick={recording ? stopRecording : startRecording}
           style={{
-            background: recording || spacebarPressed ? "#fc5151" : "#13ABCB",
+            background: recording ? "#fc5151" : "#13ABCB",
           }}
           className="rounded-full my-2"
         >

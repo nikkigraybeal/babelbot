@@ -7,25 +7,22 @@ import util from 'util'
 
 // Promisify the exec function from child_process
 const execAsync = util.promisify(exec);
-// Configure the OpenAI API client
+
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
 export async function POST(request: NextRequest) {
-  // Check if the OpenAI API key is configured
   if (!configuration.apiKey) {
     return NextResponse.json({ error: "OpenAI API key not configured, please follow instructions in README.md" }, {status:500});
   }
-  const req = await request.json()
-  // Extract the audio data from the request body
-  const base64Audio = req.audio;
+  const { audio: base64Audio, langCode } = await request.json()
   // Convert the Base64 audio data back to a Buffer
   const audio = Buffer.from(base64Audio, 'base64');
   try {
     // Convert the audio data to text
-    const text = await convertAudioToText(audio);
+    const text = await convertAudioToText(audio, langCode);
     // Return the transcribed text in the response
     return NextResponse.json({result: text}, {status:200});
   } catch(error: any) {
@@ -39,7 +36,7 @@ export async function POST(request: NextRequest) {
   }
 }
 // This function converts audio data to text using the OpenAI API
-async function convertAudioToText(audioData: Buffer) {
+async function convertAudioToText(audioData: Buffer, langCode: string) {
   // Convert the audio data to MP3 format
   const mp3AudioData = await convertAudioToMp3(audioData);
   // Write the MP3 audio data to a file
@@ -51,8 +48,12 @@ async function convertAudioToText(audioData: Buffer) {
 
   // Transcribe the audio
   const response = await openai.createTranscription(
-      fileStream as unknown as File,
-      'whisper-1'
+      fileStream as unknown as File, // audio file
+      'whisper-1', // model
+      undefined, // prompt
+      'json', // format of transcrition
+      1,  // temperature
+      langCode, // language of input
   );
   // Delete the temporary file
   fs.unlinkSync(outputPath);
