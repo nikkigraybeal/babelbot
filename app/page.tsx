@@ -73,7 +73,7 @@ export default function Home() {
           </button>
           <div className="flex flex-col gap-2 w-6/12 min-w-[300px] items-center mt-4">
             <h1 className="whitespace-nowrap text-white text-3xl">
-              Multi-Lingual ChatBot
+              Multilingual ChatBot
             </h1>
 
             <span className="self-start text-gray-400 text-xs">
